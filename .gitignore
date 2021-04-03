@@ -2,3 +2,4 @@
 jsonified/*.json
 voter_database/*
 *.swp
+.DS_Store
