@@ -12,6 +12,7 @@ from matplotlib import pyplot as plt
 
 REGISTERED_VOTER_FOLDER = './voter_database/registered_voters'
 VOTER_HISTORY_FOLDER = './voter_database/voter_history'
+MINIMUM_REGISTERED_VOTERS = 50 # ages with less registered voters are not plotted.
 
 
 def get_files_in_dir(dir_path: str):
@@ -20,6 +21,7 @@ def get_files_in_dir(dir_path: str):
 def count_votes(csv_file: str, registered_voters: Dict[str, int], all_voters: Dict[str, int], election_date: str = "11/03/2020"):
     """Reads voter history CSV file and returns a map of age to the number of votes in the specified election.
     Expected CSV file columns: VoterID,ElectionDate,VotingMethod
+    This updates registered_voters with voters from all_voters, if their vote was found, essentially assuming they were actually registered.
     """
     with open(csv_file, 'r') as f:
         csv_reader = csv.reader(f)
@@ -45,6 +47,10 @@ def count_votes(csv_file: str, registered_voters: Dict[str, int], all_voters: Di
                 if age is None:
                     no_age.add(voter_id)
                     continue
+                else:
+                    # ASSUME that since vote was recorded, voter was registered,
+                    # but it is just not reflected in voter roll. Update voter roll.
+                    registered_voters[voter_id] = age
             if age not in votes:
                 votes[age] = 0
             votes[age] += 1
@@ -106,6 +112,7 @@ def get_registered_voters(csv_file: str, election_date: int = 20201103):
             break
 
         VOTER_ID_INDEX = 5
+        VOTER_STATUS_INDEX = 7
         DATE_OF_BIRTH_INDEX = 16
         REGISTRATION_DATE_INDEX = 17
         registered_ages = {}
@@ -126,12 +133,13 @@ def get_registered_voters(csv_file: str, election_date: int = 20201103):
             assert(voter_id not in all_ages)
             all_ages[voter_id] = age
 
-            # skip unregistered voters.
+            # assume voters with no registration date are actually registered, if their status is active.
             registration_date = row[REGISTRATION_DATE_INDEX]
-            if not registration_date:
-                continue
-            registration_date = str_to_int(registration_date)
-            if registration_date > election_date:
+            if registration_date:
+                registration_date = str_to_int(registration_date)
+                if registration_date > election_date:
+                    continue
+            elif row[VOTER_STATUS_INDEX].strip() != 'A':
                 continue
 
             assert(voter_id not in registered_ages)
@@ -155,7 +163,6 @@ def plot_age_distribution(voters: Dict[int, int], votes: Dict[int, int]):
             ages.add(age)
     ages = list(ages)
     ages.sort()
-    MINIMUM_REGISTERED_VOTERS = 50
     plt.plot([x for x in ages if voters[x] > MINIMUM_REGISTERED_VOTERS], [votes[x] / voters[x] for x in ages if voters[x] > MINIMUM_REGISTERED_VOTERS])
 
 def pair_files(files1, files2):
@@ -186,6 +193,7 @@ if __name__ == '__main__':
     voter_files = get_files_in_dir(REGISTERED_VOTER_FOLDER)
     vote_files = get_files_in_dir(VOTER_HISTORY_FOLDER)
     pairs = pair_files(vote_files, voter_files)
+    failures = set()
     for p in pairs:
         print(f'processing files {p}')
         voter_file, vote_file = p
@@ -194,10 +202,15 @@ if __name__ == '__main__':
             registered_voters, all_voters = get_registered_voters(voter_file)
             votes = count_votes(vote_file, registered_voters, all_voters)
         except:
+            failures.add(tuple(p))
             print(f'error parsing {p}')
             continue
         voters = count_registered_voters(registered_voters)
         plot_age_distribution(voters, votes)
+    print(f'could not parse {len(failures)} of {len(pairs)} counties.')
+    plt.xlabel(f'Age (less than {MINIMUM_REGISTERED_VOTERS} registered voters are hidden)')
+    plt.ylabel('Voter turnout (votes / registered voters)')
+    plt.title(f'Oklahoma Voter Turnout vs. Age ({len(pairs) - len(failures)} of {len(pairs)} counties; each line = 1 county)')
     plt.show()
 
 
