@@ -1,5 +1,4 @@
 *.pyc
 jsonified/*.json
-voter_database/*.csv
-voter_database/*.zip
+voter_database/*
 *.swp
