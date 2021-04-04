@@ -31,6 +31,7 @@ Requires python3.
 2. Move and rename the voter registry folder to `./voter_database/registered_voters`
 3. Move and rename the voter history folder to `./voter_database/voter_history`
 4. Plot voter turnout lines vs. age for all counties on the same plot: `./plot_turnout_by_age.py`
+    To plot prediction of votes cast: `./predict.py COUNTY_ID`, e.g. `./predict.py 55`.
     For county ID list, see `readme.pdf` inside the registered voters folder.
 
 ## Data source
