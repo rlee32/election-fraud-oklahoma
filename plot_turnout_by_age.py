@@ -16,22 +16,22 @@ MINIMUM_REGISTERED_VOTERS = 50 # ages with less registered voters are not plotte
 
 
 def get_files_in_dir(dir_path: str):
-    return [f'{dir_path}/{x}' for x in os.listdir(dir_path)]
+    return [f'{dir_path}/{x}' for x in os.listdir(dir_path) if x[0] != '.'] # ignore hidden files.
 
 def count_votes(csv_file: str, registered_voters: Dict[str, int], all_voters: Dict[str, int], election_date: str = "11/03/2020"):
     """Reads voter history CSV file and returns a map of age to the number of votes in the specified election.
     Expected CSV file columns: VoterID,ElectionDate,VotingMethod
     This updates registered_voters with voters from all_voters, if their vote was found, essentially assuming they were actually registered.
     """
-    with open(csv_file, 'r') as f:
+    with open(csv_file, 'r', encoding='latin-1') as f:
         csv_reader = csv.reader(f)
         for row in csv_reader:
             header = row
             break
         methods = {}
-        VOTER_ID_INDEX = 0
-        ELECTION_DATE_INDEX = 1
-        VOTER_METHOD_INDEX = 2
+        VOTER_ID_INDEX = header.index('VoterID')
+        ELECTION_DATE_INDEX = header.index('ElectionDate')
+        VOTER_METHOD_INDEX = header.index('VotingMethod')
         votes = {}
         unregistered = set()
         no_age = set()
@@ -103,7 +103,7 @@ def get_registered_voters(csv_file: str, election_date: int = 20201103):
         HistMethod8,VoterHist9,HistMethod9,VoterHist10,HistMethod10
     """
 
-    with open(csv_file, 'r') as f:
+    with open(csv_file, 'r', encoding='latin-1') as f:
         csv_reader = csv.reader(f)
 
         # skip header
@@ -111,10 +111,10 @@ def get_registered_voters(csv_file: str, election_date: int = 20201103):
             header = row
             break
 
-        VOTER_ID_INDEX = 5
-        VOTER_STATUS_INDEX = 7
-        DATE_OF_BIRTH_INDEX = 16
-        REGISTRATION_DATE_INDEX = 17
+        VOTER_ID_INDEX = header.index('VoterID')
+        VOTER_STATUS_INDEX = header.index('Status')
+        DATE_OF_BIRTH_INDEX = header.index('DateOfBirth')
+        REGISTRATION_DATE_INDEX = header.index('OriginalRegistration')
         registered_ages = {}
         all_ages = {}
 
@@ -163,7 +163,8 @@ def plot_age_distribution(voters: Dict[int, int], votes: Dict[int, int]):
             ages.add(age)
     ages = list(ages)
     ages.sort()
-    plt.plot([x for x in ages if voters[x] > MINIMUM_REGISTERED_VOTERS], [votes[x] / voters[x] for x in ages if voters[x] > MINIMUM_REGISTERED_VOTERS])
+    overall_turnout = sum(votes) / sum(voters)
+    plt.plot([x for x in ages if voters[x] > MINIMUM_REGISTERED_VOTERS], [votes[x] / voters[x] / overall_turnout for x in ages if voters[x] > MINIMUM_REGISTERED_VOTERS])
 
 def pair_files(files1, files2):
     """Pairs files with common prefix before '_' together."""
@@ -201,13 +202,14 @@ if __name__ == '__main__':
         try:
             registered_voters, all_voters = get_registered_voters(voter_file)
             votes = count_votes(vote_file, registered_voters, all_voters)
-        except:
+        except Exception as e:
             failures.add(tuple(p))
-            print(f'error parsing {p}')
+            print(f'error parsing {p}: {e}')
             continue
         voters = count_registered_voters(registered_voters)
         plot_age_distribution(voters, votes)
-    print(f'could not parse {len(failures)} of {len(pairs)} counties.')
+    if failures:
+        print(f'could not parse {len(failures)} of {len(pairs)} counties.')
     plt.xlabel(f'Age (less than {MINIMUM_REGISTERED_VOTERS} registered voters are hidden)')
     plt.ylabel('Voter turnout (votes / registered voters)')
     plt.title(f'Oklahoma Voter Turnout vs. Age ({len(pairs) - len(failures)} of {len(pairs)} counties; each line = 1 county)')

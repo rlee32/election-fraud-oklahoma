@@ -16,5 +16,6 @@ Requires python3.
 ## Data source
 
 The data is free, but you must first request access: https://oklahoma.gov/elections/candidate-info/voter-list.html
+
 File size is about 2 GB for voters and vote histories for all 77 counties in Oklahoma.
 
