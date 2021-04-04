@@ -14,11 +14,24 @@ REGISTERED_VOTER_FOLDER = './voter_database/registered_voters'
 VOTER_HISTORY_FOLDER = './voter_database/voter_history'
 MINIMUM_REGISTERED_VOTERS = 50 # ages with less registered voters are not plotted.
 
+ELECTION_YEAR = 2020 # choose presidential election years from 2000 - 2020
+
+ELECTION_DAY = {
+    2020: '03',
+    2016: '08',
+    2012: '06',
+    2008: '04',
+    2004: '02',
+    2000: '07'
+}
+
+ELECTION_DATE_STR = f'11/{ELECTION_DAY[ELECTION_YEAR]}/{ELECTION_YEAR}'
+ELECTION_DATE_INT = int(f'{ELECTION_YEAR}11{ELECTION_DAY[ELECTION_YEAR]}')
 
 def get_files_in_dir(dir_path: str):
     return [f'{dir_path}/{x}' for x in os.listdir(dir_path) if x[0] != '.'] # ignore hidden files.
 
-def count_votes(csv_file: str, registered_voters: Dict[str, int], all_voters: Dict[str, int], election_date: str = "11/03/2020"):
+def count_votes(csv_file: str, registered_voters: Dict[str, int], all_voters: Dict[str, int]):
     """Reads voter history CSV file and returns a map of age to the number of votes in the specified election.
     Expected CSV file columns: VoterID,ElectionDate,VotingMethod
     This updates registered_voters with voters from all_voters, if their vote was found, essentially assuming they were actually registered.
@@ -37,7 +50,7 @@ def count_votes(csv_file: str, registered_voters: Dict[str, int], all_voters: Di
         no_age = set()
 
         for row in csv_reader:
-            if row[ELECTION_DATE_INDEX] != election_date:
+            if row[ELECTION_DATE_INDEX] != ELECTION_DATE_STR:
                 continue
             voter_id = row[VOTER_ID_INDEX]
             age = registered_voters.get(voter_id)
@@ -88,7 +101,7 @@ def get_age(start: int, end: int):
     else:
         return int(diff / 10000)
 
-def get_registered_voters(csv_file: str, election_date: int = 20201103):
+def get_registered_voters(csv_file: str):
     """Returns a map of voter ID to age of voters registered for the specified election date.
     Expected CSV file columns:
         Precinct,LastName,FirstName,MiddleName,Suffix,
@@ -128,7 +141,7 @@ def get_registered_voters(csv_file: str, election_date: int = 20201103):
             if not birth_date:
                 print(f'voter ID {voter_id} has invalid birth date {row[DATE_OF_BIRTH_INDEX]}')
                 continue
-            age = get_age(birth_date, election_date)
+            age = get_age(birth_date, ELECTION_DATE_INT)
 
             assert(voter_id not in all_ages)
             all_ages[voter_id] = age
@@ -137,7 +150,7 @@ def get_registered_voters(csv_file: str, election_date: int = 20201103):
             registration_date = row[REGISTRATION_DATE_INDEX]
             if registration_date:
                 registration_date = str_to_int(registration_date)
-                if registration_date > election_date:
+                if registration_date > ELECTION_DATE_INT:
                     continue
             elif row[VOTER_STATUS_INDEX].strip() != 'A':
                 continue
@@ -211,8 +224,8 @@ if __name__ == '__main__':
     if failures:
         print(f'could not parse {len(failures)} of {len(pairs)} counties.')
     plt.xlabel(f'Age (less than {MINIMUM_REGISTERED_VOTERS} registered voters are hidden)')
-    plt.ylabel('Voter turnout (votes / registered voters)')
-    plt.title(f'Oklahoma Voter Turnout vs. Age ({len(pairs) - len(failures)} of {len(pairs)} counties; each line = 1 county)')
+    plt.ylabel('Normalized Voter Turnout (votes / registered voters / overall turnout)')
+    plt.title(f'Oklahoma Normalized Voter Turnout vs. Age ({len(pairs) - len(failures)} of {len(pairs)} counties; each line = 1 county)')
     plt.show()
 
 
