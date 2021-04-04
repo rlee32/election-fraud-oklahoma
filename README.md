@@ -2,6 +2,10 @@
 
 This checks for patterns between voter turnout and age in Oklahoma in the 2020 General Presidential Election.
 
+## Results
+
+![alt text](plots/2020.png)
+
 ## Setup
 
 Requires python3.
