@@ -1,19 +1,17 @@
 #!/usr/bin/env python3
 
-"""Plots turnout (votes / registered voters) by age.
-Sometimes, voters have no birth date nor registration date, yet vote.
-Only the ones without birth dates are thrown out, as they cannot be grouped by age.
+"""Generates a map between age and turnout from vote history,
+that can be used to predict the number of votes cast from the number of registered voters.
 """
 
 import csv
 import os
-from typing import Dict
+from typing import Dict, List
 from matplotlib import pyplot as plt
 
+OUTPUT_FILE = './key.json'
 REGISTERED_VOTER_FOLDER = './voter_database/registered_voters'
 VOTER_HISTORY_FOLDER = './voter_database/voter_history'
-MINIMUM_REGISTERED_VOTERS = 50 # ages with less registered voters are not plotted.
-
 
 def get_files_in_dir(dir_path: str):
     return [f'{dir_path}/{x}' for x in os.listdir(dir_path) if x[0] != '.'] # ignore hidden files.
@@ -149,7 +147,7 @@ def get_registered_voters(csv_file: str, election_date: int = 20201103):
         print(f'all voters: {len(all_ages)}')
         return registered_ages, all_ages
 
-def plot_age_distribution(voters: Dict[int, int], votes: Dict[int, int]):
+def get_normalized_turnout(voters: Dict[int, int], votes: Dict[int, int]):
     """'voters' maps age to number of registered voters. 'votes' maps age to number of votes."""
     vote_ages = set()
     for age in votes:
@@ -164,9 +162,9 @@ def plot_age_distribution(voters: Dict[int, int], votes: Dict[int, int]):
     ages = list(ages)
     ages.sort()
     overall_turnout = sum(votes) / sum(voters)
-    plt.plot([x for x in ages if voters[x] > MINIMUM_REGISTERED_VOTERS], [votes[x] / voters[x] / overall_turnout for x in ages if voters[x] > MINIMUM_REGISTERED_VOTERS])
+    return {x:votes[x] / voters[x] / overall_turnout for x in ages}
 
-def pair_files(files1, files2):
+def pair_files(files1: List[str], files2: List[str]):
     """Pairs files with common prefix before '_' together."""
     groups = {}
     def prefix(filename):
@@ -190,11 +188,15 @@ def pair_files(files1, files2):
         pairs.append(groups[p])
     return pairs
 
+import json
+
 if __name__ == '__main__':
     voter_files = get_files_in_dir(REGISTERED_VOTER_FOLDER)
     vote_files = get_files_in_dir(VOTER_HISTORY_FOLDER)
     pairs = pair_files(vote_files, voter_files)
     failures = set()
+    key = {}
+
     for p in pairs:
         print(f'processing files {p}')
         voter_file, vote_file = p
@@ -207,14 +209,18 @@ if __name__ == '__main__':
             print(f'error parsing {p}: {e}')
             continue
         voters = count_registered_voters(registered_voters)
-        plot_age_distribution(voters, votes)
+        nt = get_normalized_turnout(voters, votes)
+        for age in nt:
+            if age not in key:
+                key[age] = []
+            key[age].append(nt[age])
     if failures:
         print(f'could not parse {len(failures)} of {len(pairs)} counties.')
-    plt.xlabel(f'Age (less than {MINIMUM_REGISTERED_VOTERS} registered voters are hidden)')
-    plt.ylabel('Normalized Voter Turnout (votes / registered voters / overall turnout)')
-    plt.title(f'Oklahoma Normalized Voter Turnout vs. Age ({len(pairs) - len(failures)} of {len(pairs)} counties; each line = 1 county)')
-    plt.show()
 
+    for age in key:
+        avg = sum(key[age]) / len(key[age])
+        key[age] = avg
 
-
+    json.dump(key, open(OUTPUT_FILE, 'w'))
+    print(f'wrote key to {OUTPUT_FILE}')
 

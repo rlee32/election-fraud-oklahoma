@@ -14,7 +14,7 @@ REGISTERED_VOTER_FOLDER = './voter_database/registered_voters'
 VOTER_HISTORY_FOLDER = './voter_database/voter_history'
 MINIMUM_REGISTERED_VOTERS = 50 # ages with less registered voters are not plotted.
 
-ELECTION_YEAR = 2000 # choose presidential election years from 2000 - 2020
+ELECTION_YEAR = 2020 # choose presidential election years from 2000 - 2020
 
 ELECTION_DAY = {
     2020: '03',
@@ -25,8 +25,9 @@ ELECTION_DAY = {
     2000: '07'
 }
 
-ELECTION_DATE_STR = f'11/{ELECTION_DAY[ELECTION_YEAR]}/{ELECTION_YEAR}'
-ELECTION_DATE_INT = int(f'{ELECTION_YEAR}11{ELECTION_DAY[ELECTION_YEAR]}')
+ELECTION_MONTH = '11'
+ELECTION_DATE_STR = f'{ELECTION_MONTH}/{ELECTION_DAY[ELECTION_YEAR]}/{ELECTION_YEAR}'
+ELECTION_DATE_INT = int(f'{ELECTION_YEAR}{ELECTION_MONTH}{ELECTION_DAY[ELECTION_YEAR]}')
 
 def get_files_in_dir(dir_path: str):
     return [f'{dir_path}/{x}' for x in os.listdir(dir_path) if x[0] != '.'] # ignore hidden files.
