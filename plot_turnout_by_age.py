@@ -14,7 +14,7 @@ REGISTERED_VOTER_FOLDER = './voter_database/registered_voters'
 VOTER_HISTORY_FOLDER = './voter_database/voter_history'
 MINIMUM_REGISTERED_VOTERS = 50 # ages with less registered voters are not plotted.
 
-ELECTION_YEAR = 2020 # choose presidential election years from 2000 - 2020
+ELECTION_YEAR = 2000 # choose presidential election years from 2000 - 2020
 
 ELECTION_DAY = {
     2020: '03',
@@ -225,7 +225,7 @@ if __name__ == '__main__':
         print(f'could not parse {len(failures)} of {len(pairs)} counties.')
     plt.xlabel(f'Age (less than {MINIMUM_REGISTERED_VOTERS} registered voters are hidden)')
     plt.ylabel('Normalized Voter Turnout (votes / registered voters / overall turnout)')
-    plt.title(f'Oklahoma Normalized Voter Turnout vs. Age ({len(pairs) - len(failures)} of {len(pairs)} counties; each line = 1 county)')
+    plt.title(f'{ELECTION_YEAR} Oklahoma Normalized Voter Turnout vs. Age ({len(pairs) - len(failures)} of {len(pairs)} counties; each line = 1 county)')
     plt.show()
 
 

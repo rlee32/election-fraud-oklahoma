@@ -4,7 +4,14 @@ This checks for patterns between voter turnout and age in Oklahoma in the 2020 G
 
 ## Results
 
+Note that between 2008 and 2012, voting machines were changed. Note that all of the following plots used the 2020 voter roll.
+
 ![alt text](plots/2020.png)
+![alt text](plots/2016.png)
+![alt text](plots/2012.png)
+![alt text](plots/2008.png)
+![alt text](plots/2004.png)
+![alt text](plots/2000.png)
 
 ## Setup
 
